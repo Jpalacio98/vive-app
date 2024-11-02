@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "84167798115",
+    "project_id": "vive-app-c4ba8",
+    "storage_bucket": "vive-app-c4ba8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84167798115:android:8d4d01548ed913b2333756",
+        "android_client_info": {
+          "package_name": "com.example.vive_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDidqpgLHI69rc23jmD_vyRJEZ4EfQ1uCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
