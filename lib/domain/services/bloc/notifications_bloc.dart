@@ -6,6 +6,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:vive_app/domain/services/local_notifications.dart';
+import 'package:vive_app/ui/components/aditionalsFuntions.dart';
 
 part 'notifications_event.dart';
 part 'notifications_state.dart';
@@ -48,9 +49,6 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
     final token = await messaging.getToken();
     if (token != null) {
-      // final prefs = PreferenciasUsuario();
-      // prefs.token = token;
-      print("Token id: $token");
       return token;
     }
     return 'null';
@@ -72,40 +70,56 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
   }
 
   Future<void> createGroup(String name, List<String> members) async {
-    // Asegúrate de que la variable esté definida
+  if (members.isEmpty) {
+    print("Error: La lista de miembros está vacía.");
+    return;
+  }
 
+  print("Nombre del grupo: $name");
+  print("Miembros (tokens): $members");
+
+  try {
     final response = await http.post(
       Uri.parse('$apiUrl/subscribe'),
       headers: {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'topicName': name,
+        'topicName': toCamelCase(name),
         'tokens': members,
       }),
     );
 
     if (response.statusCode == 200) {
-      // Procesar la respuesta
-      final responseData = jsonDecode(response.body);
-      print('Éxito: ${responseData}');
+      if (response.body.isNotEmpty) {
+        final responseData = jsonDecode(response.body);
+        print('Éxito: $responseData');
+      } else {
+        print('Advertencia: La respuesta está vacía');
+      }
     } else {
-      // Manejar el error
-      print('Error en la suscripción: ${response.statusCode}');
+      print('Error en la suscripción: Código ${response.statusCode}');
     }
+  } catch (e) {
+    print("Error en la petición de crear grupo: $e");
   }
+}
+
+
 
   Future<void> sendNotificationToTopic(
-      String topic, String title, String message) async {
+      String topic, String title, String message,String deviceTokenSender) async {
+    print("TopicName To Send: ${topic}");
     final response = await http.post(
       Uri.parse('$apiUrl/topic/send_notification'),
       headers: {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'topic': topic,
+        'topic': topic.trim(),
         'titulo': title,
         'mensaje': message,
+        'deviceTokenSender':deviceTokenSender,
       }),
     );
 

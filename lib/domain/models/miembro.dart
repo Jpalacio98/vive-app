@@ -3,12 +3,14 @@ class Miembro {
   final String userId;
   final String tipo;
   final DateTime fecha;
+  String deviceToken;
 
   Miembro(
       {required this.grupoId,
       required this.userId,
       required this.tipo,
-      required this.fecha});
+      required this.fecha,
+      this.deviceToken ="",});
 
   factory Miembro.fromJson(Map<String, dynamic> json) {
     print("Hol: ${json['grupoId']}");
@@ -17,6 +19,7 @@ class Miembro {
       userId: json['userId'],
       fecha: DateTime.fromMillisecondsSinceEpoch(json['fecha'] as int),
       tipo: json['tipo'],
+      deviceToken: json['deviceToken'],
     );
   }
 
@@ -26,6 +29,7 @@ class Miembro {
       userId: json['userId'],
       fecha: DateTime.fromMillisecondsSinceEpoch(json['fecha'] as int),
       tipo: json['tipo'],
+      deviceToken: json['deviceToken'],
     );
   }
 
@@ -35,6 +39,7 @@ class Miembro {
       'userId': userId,
       'fecha': fecha,
       'tipo': tipo,
+      'deviceToken': deviceToken,
     };
   }
 
@@ -44,6 +49,7 @@ class Miembro {
       'userId': userId,
       'fecha': fecha,
       'tipo': tipo,
+      'deviceToken': deviceToken,
     };
   }
 }

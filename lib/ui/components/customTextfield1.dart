@@ -4,13 +4,14 @@ import 'package:vive_app/utils/styles.dart';
 class CustomTextField1 extends StatefulWidget {
   final bool isPassword;
   final String text;
+  final String keyboardType;
   final TextEditingController controller;
 
   const CustomTextField1({
     super.key,
     this.isPassword = false,
     required this.text,
-    required this.controller,
+    required this.controller, this.keyboardType="name",
   });
 
   @override
@@ -53,6 +54,34 @@ class _CustomTextField1State extends State<CustomTextField1> {
     });
   }
 
+  TextInputType _getKeyboardType(String maskType) {
+    switch (maskType) {
+      case 'identifier':
+        return const TextInputType.numberWithOptions();
+      case 'money':
+        return const TextInputType.numberWithOptions(decimal: true);
+      case 'phone':
+        return TextInputType.phone;
+      case 'date':
+        return TextInputType.datetime;
+      case 'email':
+        return TextInputType.emailAddress;
+      case 'number':
+        return TextInputType.number;
+      case 'name':
+      default:
+        return TextInputType.text;
+    }
+  }
+TextCapitalization _getTextCapitalization(String maskType) {
+    switch (maskType) {
+      case 'name':
+        return TextCapitalization
+            .words; // Capitaliza la primera letra de cada palabra
+      default:
+        return TextCapitalization.none;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -76,6 +105,8 @@ class _CustomTextField1State extends State<CustomTextField1> {
                   controller: widget.controller,
                   obscureText: widget.isPassword && _obscureText,
                   focusNode: _focusNode,
+                  keyboardType: _getKeyboardType(widget.keyboardType),
+                  textCapitalization: _getTextCapitalization(widget.keyboardType),
                   decoration: InputDecoration(
                     hintText: widget.text,
                     border: InputBorder.none,

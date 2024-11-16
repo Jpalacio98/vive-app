@@ -48,7 +48,7 @@ class UserService {
               'nombre': user.nombre,
               'password': user.password,
               'userId':user.userId,
-              'deviceToken':user.deviceTokens
+              'deviceToken':user.deviceToken
             });
           }
 

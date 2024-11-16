@@ -7,7 +7,7 @@ class Usuario {
   late String imageUrl;
   final String password;
   final String userId;
-  List<String> deviceTokens;
+  String deviceToken;
 
   Usuario({
     required this.correo,
@@ -15,8 +15,8 @@ class Usuario {
     required this.imageUrl,
     required this.password,
     required this.userId,
-    List<String>? deviceTokens, // Cambiar a parámetro opcional
-  }) : deviceTokens = deviceTokens ?? [];
+    this.deviceToken ="", // Cambiar a parámetro opcional
+  });
   Map<String, dynamic> toJson() {
     return {
       'correo': correo,
@@ -24,7 +24,7 @@ class Usuario {
       'imageUrl': imageUrl,
       'password': password,
       'userId': userId,
-      'deviceTokens': deviceTokens, // Agregar deviceTokens al JSON
+      'deviceToken': deviceToken, // Agregar deviceToken al JSON
     };
   }
 
@@ -35,7 +35,7 @@ class Usuario {
       imageUrl: json['imageUrl'],
       password: json['password'],
       userId: json['userId'],
-      deviceTokens: List<String>.from(json['deviceTokens'] ?? []), // Cargar deviceTokens
+      deviceToken: json['deviceToken'], // Cargar deviceToken
     );
   }
 
@@ -46,7 +46,7 @@ class Usuario {
       imageUrl: json['imageUrl'] as String,
       password: json['password'] as String,
       userId: json['userId'] as String,
-      deviceTokens: List<String>.from(json['deviceTokens'] ?? []), // Cargar deviceTokens
+      deviceToken: json['deviceToken'], // Cargar deviceToken
     );
   }
 
@@ -58,10 +58,7 @@ class Usuario {
 
   // Función para verificar si un token está en la lista
   void hasDeviceToken(String token) {
-    if(deviceTokens.contains(token)){
-      return;
-    }else{
-      deviceTokens.add(token);
-    }
+    deviceToken=token;
+    
   }
 }

@@ -146,10 +146,9 @@ class _ChatState extends State<Chat> {
     );
 
     //send the message notification
-      widget.grupo.nombre;
       final notify = NotificationsBloc();
-      notify.sendNotificationToTopic(widget.grupo.nombre, controllerUser.user!.nombre, _messageController.text);
-      
+      final userToken = await notify.getToken();
+      await notify.sendNotificationToTopic(widget.grupo.nombre, controllerUser.user!.nombre, _messageController.text,userToken);
     //
     await mensajesBox!.put(newMessage.id, newMessage.toMap(false));
     setState(() {
@@ -513,3 +512,7 @@ class _ChatState extends State<Chat> {
     );
   }
 }
+
+
+
+

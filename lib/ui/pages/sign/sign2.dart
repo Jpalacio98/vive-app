@@ -102,6 +102,7 @@ class _Sign2State extends State<Sign2> {
                     CustomTextField1(
                       text: "Código de verificación",
                       controller: codeController,
+                      keyboardType: "number",
                     ),
                     const SizedBox(height: 20),
                     Align(

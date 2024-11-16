@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,9 @@ import 'package:vive_app/domain/services/bloc/notifications_bloc.dart';
 import 'package:vive_app/domain/services/local_notifications.dart';
 import 'package:vive_app/infrastructure/controllers/controllerUser.dart';
 import 'package:vive_app/infrastructure/controllers/map.dart';
+import 'package:http/http.dart' as http;
+import 'package:vive_app/ui/components/aditionalsFuntions.dart';
+import 'package:vive_app/ui/pages/limpiarCache.dart';
 
 //import 'package:vive_app/ui/pages/limpiarCache.dart';
 
@@ -20,15 +25,27 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await LocalNotification.initializeLocalNotifications();
-  
+  print(
+      "-------------------------test de petecion--------------------------------");
+  // print("url del server: ${dotenv.env['API_URL']!}");
+  // final notify = NotificationsBloc();
+  // String m1 = "e04zDhXKSTqcNbEqz8yduS:APA91bE77jJvt6fIYewJFelpVo_DpKkMaQE28Oskgw0acrubh9nlzzgWYWmiI94Qs-FQYMqicQOKDqURTukJ5lTg_LAWUKoXhLx54-wCIVMqTERpszC5Am8";
+  // String m2 = "miembro2";
+  // List<String> members = [];
+  // members.add(m1);
+  // print(members);
+  // await notify.createGroup("los chisco del barrio", members);
+  print(
+      "-------------------------------------------------------------------------");
+
   await Hive.initFlutter();
-  // limpiarBaseDeDatos();
+  limpiarBaseDeDatos();
   await Hive.openBox('grupos');
   await Hive.openBox('mensajes');
   await Hive.openBox('auth');
@@ -37,7 +54,8 @@ void main() async {
 
   Get.put(ControllerUser());
   Get.put(MapController());
-  await dotenv.load(fileName:".env");
+
+  print(dotenv.env['API_URL']!);
   runApp(MultiBlocProvider(
     providers: [
       BlocProvider(

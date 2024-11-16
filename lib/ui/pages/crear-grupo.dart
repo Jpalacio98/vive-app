@@ -109,17 +109,18 @@ class _CreateGrupoState extends State<CreateGrupo> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
+                    keyboardType: TextInputType.name,
                     controller: correoController,
                     decoration:
-                        const InputDecoration(labelText: 'Correo del usuario'),
+                        const InputDecoration(labelText: 'Nombre del usuario'),
                     onChanged: (texto) {
                       // Actualiza el stream solo si hay texto
                       if (texto.isNotEmpty) {
                         setState(() {
                           streamBusqueda = FirebaseFirestore.instance
                               .collection('users')
-                              .where('correo', isGreaterThanOrEqualTo: texto)
-                              .where('correo',
+                              .where('nombre', isGreaterThanOrEqualTo: texto)
+                              .where('nombre',
                                   isLessThanOrEqualTo: '$texto\uf8ff')
                               .snapshots();
                         });
@@ -134,7 +135,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
                   const SizedBox(height: 20),
                   // Mostrar mensaje o resultados usando StreamBuilder
                   if (streamBusqueda == null)
-                    const Text("Busca un usuario por correo"),
+                    const Text("Busca un usuario por su nombre"),
                   if (streamBusqueda != null)
                     StreamBuilder<QuerySnapshot>(
                       stream: streamBusqueda,
@@ -146,13 +147,15 @@ class _CreateGrupoState extends State<CreateGrupo> {
                         // Obtener usuarios excluyendo el usuario actual
                         List<Map<String, dynamic>> usuariosEncontrados =
                             snapshot.data!.docs
-                                .where((doc) =>
-                                    doc['correo'] !=
-                                    controllerUser.user!.correo)
+                                .where(
+                                    (doc) =>
+                                        doc['nombre'] !=
+                                        controllerUser.user!.nombre)
                                 .map((doc) => {
                                       'nombre': doc['nombre'],
                                       'foto': doc['imageUrl'],
-                                      'userId': doc['userId']
+                                      'userId': doc['userId'],
+                                      'deviceToken': doc['deviceToken']
                                     })
                                 .toList();
 
@@ -325,6 +328,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
         'imagen': miembro['imagen'],
         'tipo': "miembro",
         'fecha': DateTime.now().millisecondsSinceEpoch,
+        'deviceToken': miembro['deviceToken'],
       });
     }
 
@@ -379,7 +383,8 @@ class _CreateGrupoState extends State<CreateGrupo> {
     }
     Navigator.of(context).pop();
 
-    Grupos grupo2 = Grupos.fromMap(grupo ?? Grupos(
+    Grupos grupo2 = Grupos.fromMap(grupo ??
+        Grupos(
             nombre: "",
             descripcion: "",
             id: "",
@@ -408,7 +413,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
 
       String imageUrl = await ref.getDownloadURL();
       return imageUrl;
-          //return "imagen local";
+      //return "imagen local";
     } catch (e) {
       return "error";
     }
@@ -432,6 +437,25 @@ class _CreateGrupoState extends State<CreateGrupo> {
     return directory.path;
   }
 
+Future<void> createTopicDocument(String topicName, List<String> deviceTokens) async {
+
+
+  try {
+    // Referencia a la colección "topics" en Firestore
+    final topicsCollection = FirebaseFirestore.instance.collection('topics');
+
+    // Crear el documento con el UID como ID
+    await topicsCollection.doc(uniqueId).set({
+      'uid': uniqueId,
+      'TopicName': topicName,
+      'members': deviceTokens,
+    });
+
+    print('Documento creado exitosamente con UID: $uniqueId');
+  } catch (e) {
+    print('Error al crear el documento: $e');
+  }
+}
   @override
   void initState() {
     super.initState();
@@ -442,9 +466,9 @@ class _CreateGrupoState extends State<CreateGrupo> {
 
   @override
   Widget build(BuildContext context) {
-    final notify=  context.read<NotificationsBloc>();
+    final notify = context.read<NotificationsBloc>();
     notify.requestPermission();
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -637,17 +661,30 @@ class _CreateGrupoState extends State<CreateGrupo> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           _saveMessageLocally(
               ControllerDescription.text, controllerNombre.text);
-          final List<String> members =[];
-          for (int i=0; i<miembros.length; i++) {
-            members.add(miembros[i]["deviceToken"]);
-            print(miembros[i]["deviceToken"]);
+          List<String> members = [];
+
+          for (var member in miembros) {
+            if (member.containsKey('userId') &&
+                member['userId'] != null) {
+              String token = member['userId'].toString();
+              members.add(token);
+            }
           }
-           notify.createGroup(nombreGrupo,members);
+          members.add(controllerUser.user!.userId);
+          if (members.isEmpty) {
+            print("Error: No se encontraron miembros con tokens válidos.");
+            return;
+          }
+
+          print("Lista de miembros: $members");
+
+          //final notifyService = NotificationsBloc();
+          //await notifyService.createGroup(controllerNombre.text, members);
+          await createTopicDocument(controllerNombre.text.trim(), members);
         },
-      
         backgroundColor: bgPrincipal(),
         foregroundColor: Colors.white,
         child: const Icon(Icons.arrow_right_alt),

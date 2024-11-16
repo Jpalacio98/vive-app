@@ -69,6 +69,7 @@ class _Sign1State extends State<Sign1> {
                     CustomTextField1(
                       text: "Correo",
                       controller: controllerCorreo,
+                      keyboardType: "email",
                     ),
                     const SizedBox(height: 80),
                   ],
