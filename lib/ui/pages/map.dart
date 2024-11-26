@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as dart_ui;
@@ -34,13 +35,14 @@ class _MapaGruposState extends State<MapaGrupos> {
   @override
   void initState() {
     super.initState();
+    
     _initMapa();
   }
 
   Future<void> _initMapa() async {
     // // Intenta obtener la ubicación
     isUbicacion = await controller.getCurrentLocation();
-
+    print("isUbicacion: ${isUbicacion}");
     // Si es éxito, actualiza la posición de la cámara y carga los grupos
     if (isUbicacion == 'exito') {
       // _updateCameraPosition();
@@ -403,7 +405,7 @@ class _MapaGruposState extends State<MapaGrupos> {
             markers: _markers,
             initialCameraPosition: CameraPosition(
               target: LatLng(controller.latitud, controller.longitud),
-              zoom: 18.0, 
+              zoom: 18.0,
             ),
           ),
         ],

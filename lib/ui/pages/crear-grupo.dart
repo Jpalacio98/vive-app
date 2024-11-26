@@ -368,6 +368,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
         'longitud': longitud,
         'latitud': latitud,
         'tipoImagen': 'web',
+        'miembros': miembros.length +1,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
@@ -391,7 +392,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
             imagen: "",
             latitud: 0,
             longitud: 0,
-            tipoImagen: ""));
+            tipoImagen: "",miembros: 0));
 
     Navigator.pushAndRemoveUntil(
       context,

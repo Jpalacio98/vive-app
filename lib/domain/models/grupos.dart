@@ -1,3 +1,5 @@
+
+
 class Grupos {
   final String descripcion;
   final String id;
@@ -6,6 +8,7 @@ class Grupos {
   final double latitud;
   final double longitud;
   final String nombre;
+  final int miembros;
 
 
   Grupos({
@@ -15,7 +18,8 @@ class Grupos {
     required this.imagen,
     required this.latitud,
     required this.longitud,
-    required this.tipoImagen
+    required this.tipoImagen,
+    required this.miembros
   });
 
   factory Grupos.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,7 @@ class Grupos {
       imagen: json['imagen'],
       latitud: json['latitud'],
       longitud: json['longitud'],
+      miembros: json['miembros']
     );
   }
 
@@ -41,6 +46,7 @@ class Grupos {
       imagen: json['imagen'],
       latitud: json['latitud'],
       longitud: json['longitud'],
+      miembros:json['miembros'] ?? 0,
     );
   }
 
@@ -53,6 +59,7 @@ class Grupos {
       'imagen': imagen,
       'latitud': latitud,
       'longitud': longitud,
+      'miembros': miembros,
     };
   }
 
@@ -65,6 +72,7 @@ class Grupos {
       'imagen': imagen,
       'latitud': latitud,
       'longitud': longitud,
+      'miembros': miembros
     };
   }
 }

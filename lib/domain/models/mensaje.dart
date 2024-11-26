@@ -37,7 +37,7 @@ class Mensaje {
     };
   }
 
-  Map<dynamic, dynamic> toMap(bool sent) {
+  Map<String, dynamic> toMap(bool sent) {
     return {
       'id': id,
       'estado': estado,
@@ -49,7 +49,6 @@ class Mensaje {
       'sent': sent,
       'nombreUsuario': nombreUsuario,
       'imagen': imagen,
-      
     };
   }
 

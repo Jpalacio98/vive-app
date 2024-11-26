@@ -1,13 +1,16 @@
+import 'dart:core';
 import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:vive_app/domain/models/encuesta.dart';
 import 'package:vive_app/domain/models/grupos.dart';
 import 'package:vive_app/domain/models/mensaje.dart';
 import 'package:vive_app/domain/services/bloc/notifications_bloc.dart';
 import 'package:vive_app/infrastructure/controllers/controllerUser.dart';
+import 'package:vive_app/ui/pages/encuenta.dart';
 import 'package:vive_app/ui/pages/home.dart';
 
 class Chat extends StatefulWidget {
@@ -65,23 +68,70 @@ class _ChatState extends State<Chat> {
 
   void saveMessagesToHive(List<QueryDocumentSnapshot> docs) async {
     for (var doc in docs) {
+      final newMessage;
       if (!mensajesBox!.containsKey(doc.id)) {
-        final newMessage = Mensaje(
-            imagen: doc['imagen'] ?? "",
-            nombreUsuario: doc['nombreUsuario'] ?? "",
-            id: doc.id,
-            userId: doc['userId'],
-            grupoId: doc['grupoId'],
-            tipo: doc['tipo'],
-            mensaje: doc['mensaje'],
-            estado: true,
-            fecha: DateTime.fromMillisecondsSinceEpoch(doc['fecha'] as int));
+        if (doc['tipo'] == "encuesta") {
+          newMessage = Encuesta(
+              imagen: doc['imagen'] ?? "",
+              nombreUsuario: doc['nombreUsuario'] ?? "",
+              id: doc.id,
+              userId: doc['userId'],
+              grupoId: doc['grupoId'],
+              tipo: doc['tipo'],
+              mensaje: doc['mensaje'],
+              estado: true,
+              fecha: DateTime.fromMillisecondsSinceEpoch(doc['fecha'] as int),
+              pregunta: doc['pregunta'],
+              opciones: List<String>.from(doc['opciones']),
+              permitirMultiplesRespuestas: doc['permitirMultiplesRespuestas'],
+              respuestas: mapeoRespuestas(doc),
+              fechaCreacion: DateTime.fromMillisecondsSinceEpoch(
+                  doc['fechaCreacion'] as int));
+
+          print("estas son las respuestas" + doc['respuestas'].toString());
+        } else {
+          newMessage = Mensaje(
+              imagen: doc['imagen'] ?? "",
+              nombreUsuario: doc['nombreUsuario'] ?? "",
+              id: doc.id,
+              userId: doc['userId'],
+              grupoId: doc['grupoId'],
+              tipo: doc['tipo'],
+              mensaje: doc['mensaje'],
+              estado: true,
+              fecha: DateTime.fromMillisecondsSinceEpoch(doc['fecha'] as int));
+        }
 
         await mensajesBox!.put(newMessage.id, newMessage.toMap(true));
 
         _loadMessages();
       }
     }
+  }
+
+  Map<String, List<String>> mapeoRespuestas(
+      dynamic doc) {
+    // Declara el mapa donde se guardarán los resultados
+    Map<String, List<String>> res = {};
+
+    // Convierte 'respuestas' a un mapa
+    Map respuestasMap = Map.from(doc['respuestas']);
+
+    // Itera sobre las entradas de respuestasMap
+    for (var entry in respuestasMap.entries) {
+      String key = entry.key; // Clave del mapa
+      List<String> value =
+          List<String>.from(entry.value); // Valor convertido a lista
+
+      // Añade al mapa 'res', combinando si ya existe la clave
+      if (res.containsKey(key)) {
+        res[key]!.addAll(value);
+      } else {
+        res[key] = value;
+      }
+    }
+
+    return res;
   }
 
   void _loadMessages() {
@@ -99,10 +149,7 @@ class _ChatState extends State<Chat> {
         ..sort((a, b) => DateTime.fromMillisecondsSinceEpoch(a['fecha'])
             .compareTo(DateTime.fromMillisecondsSinceEpoch(b['fecha'])));
 
-     
-
       if (messages.isNotEmpty) {
-         
         ultimoMensajeBox!.put(widget.grupo.id, messages.last);
       } else {
         final defaultMessage = Mensaje(
@@ -146,9 +193,15 @@ class _ChatState extends State<Chat> {
     );
 
     //send the message notification
-      final notify = NotificationsBloc();
-      final userToken = await notify.getToken();
-      await notify.sendNotificationToTopic(widget.grupo.nombre, controllerUser.user!.nombre, _messageController.text,userToken);
+    final notify = NotificationsBloc();
+    final userToken = await notify.getToken();
+    try{
+      await notify.sendNotificationToTopic(widget.grupo.nombre,
+        controllerUser.user!.nombre, _messageController.text, userToken);
+    }catch(e){
+      print("Error sending Notification: ${e.toString()}");
+    }
+    
     //
     await mensajesBox!.put(newMessage.id, newMessage.toMap(false));
     setState(() {
@@ -252,7 +305,77 @@ class _ChatState extends State<Chat> {
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         actions: [
           TextButton(
-              onPressed: () {},
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => PollWidget(
+                    onPollCreated: (question, options, allowMultiple) async {
+                      // Aquí procesas la creación de la encuesta
+                      print("Pregunta: $question");
+                      print("Opciones: $options");
+                      print("Permitir múltiples: $allowMultiple");
+                      // Crea un "mensaje" de tipo encuesta
+                      var idMensaje = generateUniqueId();
+                      Encuesta encuestaMessage = Encuesta(
+                          id: idMensaje,
+                          pregunta: question,
+                          opciones: options,
+                          permitirMultiplesRespuestas: allowMultiple,
+                          fechaCreacion: DateTime.now(),
+                          imagen: controllerUser.user!.imageUrl,
+                          nombreUsuario: controllerUser.user!.nombre,
+                          userId: controllerUser.user!.userId,
+                          grupoId: widget.grupo.id,
+                          tipo: 'encuesta',
+                          mensaje: question,
+                          fecha: DateTime.now(),
+                          estado: true,
+                          respuestas: {});
+
+                      // También puedes guardar este mensaje en Firestore si lo deseas.
+
+                      await mensajesBox!.put(
+                          encuestaMessage.id, encuestaMessage.toMap(false));
+                      setState(() {
+                        messages.add(encuestaMessage.toMap(false));
+                      });
+                      var mensajeData = mensajesBox?.get(idMensaje);
+                      if (mensajeData != null) {
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('mensajes')
+                              .doc(idMensaje)
+                              .set({
+                            'id': idMensaje,
+                            'imagen': controllerUser.user!.imageUrl,
+                            'nombreUsuario': controllerUser.user!.nombre,
+                            'userId': mensajeData['userId'],
+                            'grupoId': mensajeData['grupoId'],
+                            'tipo': mensajeData['tipo'],
+                            'mensaje': mensajeData['mensaje'],
+                            'fecha': DateTime.now().millisecondsSinceEpoch,
+                            'pregunta': mensajeData['pregunta'],
+                            'opciones':
+                                List<String>.from(mensajeData['opciones']),
+                            'permitirMultiplesRespuestas':
+                                mensajeData['permitirMultiplesRespuestas'],
+                            'fechaCreacion':
+                                DateTime.fromMillisecondsSinceEpoch(
+                                    mensajeData['fechaCreacion']),
+                          });
+
+                          mensajeData['sent'] = true;
+                          await mensajesBox?.put(idMensaje, mensajeData);
+                          _loadMessages();
+                        } catch (e) {
+                          print("Error: $e");
+                        }
+                      }
+                      // Guarda o muestra el mensaje de encuesta
+                    },
+                  ),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
@@ -264,7 +387,7 @@ class _ChatState extends State<Chat> {
                   Icons.fact_check,
                   color: Colors.white,
                 ),
-              ))
+              )),
         ],
       ),
       body: Stack(
@@ -370,7 +493,18 @@ class _ChatState extends State<Chat> {
 
     // Formatear la fecha a una cadena legible usando la función creada
     String formattedDate = formatDateTime(fecha);
+    if (message['tipo'] == 'encuesta') {
+      // Mostrar la encuesta de manera especial
+      Encuesta encuestamessage = Encuesta.fromMap(message);
 
+      return Align(
+          alignment: Alignment.center,
+          child: EncuestaWidget(
+              encuesta: encuestamessage,
+              userId: controllerUser.user!.userId,
+              userImage: controllerUser.user!.imageUrl,
+              votantes: widget.grupo.miembros));
+    }
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -512,7 +646,3 @@ class _ChatState extends State<Chat> {
     );
   }
 }
-
-
-
-

@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late List<Grupos> misGrupos = []; 
+  late List<Grupos> misGrupos = [];
   late List<Map<dynamic, dynamic>> ultimosMensaje = [];
   Box? _gruposBox;
   Box? ultimoMensajeBox;
@@ -82,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_gruposBox == null) return;
     final List<dynamic> gruposData = _gruposBox!.values.toList();
     setState(() {
+      print("numero de grupos ${gruposData.length}");
       misGrupos = gruposData.map((e) => Grupos.fromMap(e)).toList();
       ultimosMensaje = ultimoMensajeBox!.values
           .map((e) => e as Map<dynamic, dynamic>)
@@ -131,7 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
           latitud: (doc['latitud'] ?? 0.0).toDouble(),
           longitud: (doc['longitud'] ?? 0.0).toDouble(),
           nombre: doc['nombre'] ?? "",
-          tipoImagen: doc['tipoImagen'] ?? "");
+          tipoImagen: doc['tipoImagen'] ?? "",
+          miembros: doc['miembros'] ?? 0);
 
       await _gruposBox!.put(grupo.id, grupo.toMap());
 

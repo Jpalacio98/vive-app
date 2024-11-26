@@ -1,4 +1,5 @@
-import 'dart:convert';
+
+//import 'package:vive_app/ui/pages/limpiarCache.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vive_app/app/myApp.dart';
@@ -14,11 +16,7 @@ import 'package:vive_app/domain/services/bloc/notifications_bloc.dart';
 import 'package:vive_app/domain/services/local_notifications.dart';
 import 'package:vive_app/infrastructure/controllers/controllerUser.dart';
 import 'package:vive_app/infrastructure/controllers/map.dart';
-import 'package:http/http.dart' as http;
-import 'package:vive_app/ui/components/aditionalsFuntions.dart';
-import 'package:vive_app/ui/pages/limpiarCache.dart';
 
-//import 'package:vive_app/ui/pages/limpiarCache.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,9 +41,9 @@ void main() async {
   // await notify.createGroup("los chisco del barrio", members);
   print(
       "-------------------------------------------------------------------------");
-
+  await Geolocator.requestPermission();
   await Hive.initFlutter();
-  limpiarBaseDeDatos();
+  //limpiarBaseDeDatos();
   await Hive.openBox('grupos');
   await Hive.openBox('mensajes');
   await Hive.openBox('auth');
