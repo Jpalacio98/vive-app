@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
           fecha: mensaje.fecha);
 
       await mensajesBox.put(newMessage.id, newMessage.toMap(true));
-      await ultimoMensajeBox!.put(mensaje.grupoId, newMessage.toMapUltimo(true, 1));
+      await ultimoMensajeBox!
+          .put(mensaje.grupoId, newMessage.toMapUltimo(true, 1));
 
       ultimosMensaje = List<Map<dynamic, dynamic>>.from(ultimoMensajeBox!.values
           .map((e) => e as Map<dynamic, dynamic>)
@@ -157,6 +158,69 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void eliminarGrupo(String grupoId) async {
+    // Mostrar un cuadro de confirmación
+    bool? confirmacion = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Eliminar grupo"),
+          content:
+              const Text("¿Estás seguro de que deseas eliminar este grupo?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Cancelar
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // Confirmar
+              child: const Text("Eliminar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmacion == true) {
+      try {
+        // Eliminar el grupo de Firebase
+        await FirebaseFirestore.instance
+            .collection('grupos')
+            .doc(grupoId)
+            .delete();
+        await FirebaseFirestore.instance
+            .collection('topics')
+            .doc(grupoId)
+            .delete();
+        // Eliminar los mensajes asociados al grupo
+        await FirebaseFirestore.instance
+            .collection('mensajes')
+            .where('grupoId', isEqualTo: grupoId)
+            .get()
+            .then((snapshot) {
+          for (var doc in snapshot.docs) {
+            doc.reference.delete();
+          }
+        });
+
+        // Eliminar el grupo y sus mensajes de Hive
+        await _gruposBox?.delete(grupoId);
+        await Hive.deleteBoxFromDisk('mensajes$grupoId');
+        await ultimoMensajeBox?.delete(grupoId);
+
+        // Actualizar la lista local de grupos
+        setState(() {
+          misGrupos.removeWhere((grupo) => grupo.id == grupoId);
+          ultimosMensaje.removeWhere((msg) => msg['grupoId'] == grupoId);
+        });
+
+        Get.snackbar("Éxito", "El grupo ha sido eliminado.");
+      } catch (e) {
+        Get.snackbar("Error", "No se pudo eliminar el grupo: $e");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Crear un mapa para acceder a los grupos por su ID
@@ -242,6 +306,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   );
+                },
+                onLongPress: () {
+                  eliminarGrupo(
+                      grupo.id); // Llama a la función para eliminar el grupo
                 },
                 child: CustomChatGrupo(
                   mensaje: ultimosMensaje.firstWhere(

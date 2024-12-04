@@ -6,16 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vive_app/domain/alerts/alertCargando.dart';
 import 'package:vive_app/domain/alerts/alertError.dart';
 import 'package:vive_app/domain/models/grupos.dart';
 import 'package:vive_app/domain/services/bloc/notifications_bloc.dart';
 import 'package:vive_app/infrastructure/controllers/controllerUser.dart';
 import 'package:vive_app/ui/components/customTextfield1.dart';
 import 'package:vive_app/ui/components/textfieldDescripcion.dart';
+import 'package:vive_app/ui/pages/SelectLocation.dart';
 import 'package:vive_app/ui/pages/chat.dart';
 import 'package:vive_app/utils/styles.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Agregar para Firestore
@@ -37,6 +38,8 @@ class _CreateGrupoState extends State<CreateGrupo> {
   String uniqueId = "";
   String imagenGrupo = "";
   String nombreGrupo = "";
+  Position?
+      _ubicacionSeleccionada; // Variable para almacenar la ubicación seleccionada
 
   Future<Position> _obtenerUbicacion() async {
     LocationPermission permiso = await Geolocator.checkPermission();
@@ -279,19 +282,14 @@ class _CreateGrupoState extends State<CreateGrupo> {
       mostrarAlertaError(context, "Debes añadir almenos un miembro.");
       return;
     }
-
-    // Obtener la ubicación
-    Position posicion;
-    try {
-      mostrarAlertaCargando(context, 'Creando Grupo...');
-      posicion = await _obtenerUbicacion();
-    } catch (e) {
-      mostrarAlertaError(context, "No se pudo obtener la ubicación.");
+    if (_ubicacionSeleccionada!.isNull) {
+      mostrarAlertaError(context, "Debes seleccionar la ubicacion en el mapa");
       return;
     }
+    // Obtener la ubicación
 
-    double latitud = posicion.latitude;
-    double longitud = posicion.longitude;
+    double latitud = _ubicacionSeleccionada!.latitude;
+    double longitud = _ubicacionSeleccionada!.longitude;
 
     String imagen = "imagen local";
 
@@ -368,7 +366,7 @@ class _CreateGrupoState extends State<CreateGrupo> {
         'longitud': longitud,
         'latitud': latitud,
         'tipoImagen': 'web',
-        'miembros': miembros.length +1,
+        'miembros': miembros.length + 1,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
@@ -392,7 +390,8 @@ class _CreateGrupoState extends State<CreateGrupo> {
             imagen: "",
             latitud: 0,
             longitud: 0,
-            tipoImagen: "",miembros: 0));
+            tipoImagen: "",
+            miembros: 0));
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -438,25 +437,25 @@ class _CreateGrupoState extends State<CreateGrupo> {
     return directory.path;
   }
 
-Future<void> createTopicDocument(String topicName, List<String> deviceTokens) async {
+  Future<void> createTopicDocument(
+      String topicName, List<String> deviceTokens) async {
+    try {
+      // Referencia a la colección "topics" en Firestore
+      final topicsCollection = FirebaseFirestore.instance.collection('topics');
 
+      // Crear el documento con el UID como ID
+      await topicsCollection.doc(uniqueId).set({
+        'uid': uniqueId,
+        'TopicName': topicName,
+        'members': deviceTokens,
+      });
 
-  try {
-    // Referencia a la colección "topics" en Firestore
-    final topicsCollection = FirebaseFirestore.instance.collection('topics');
-
-    // Crear el documento con el UID como ID
-    await topicsCollection.doc(uniqueId).set({
-      'uid': uniqueId,
-      'TopicName': topicName,
-      'members': deviceTokens,
-    });
-
-    print('Documento creado exitosamente con UID: $uniqueId');
-  } catch (e) {
-    print('Error al crear el documento: $e');
+      print('Documento creado exitosamente con UID: $uniqueId');
+    } catch (e) {
+      print('Error al crear el documento: $e');
+    }
   }
-}
+
   @override
   void initState() {
     super.initState();
@@ -559,7 +558,49 @@ Future<void> createTopicDocument(String topicName, List<String> deviceTokens) as
                 height: 10,
               ),
 //Image.file(File('/data/user/0/com.lessyngthon.vive_app/app_flutter/image_172911994123875502.png'))  mostrar imagen local
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: ElevatedButton(
+                  child: Text('Seleccionar Ubicación'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return Dialog(
+                          child: SelectLocationWidget(
+                            onLocationSelected: (LatLng location) {
+                              _ubicacionSeleccionada = Position(
+                                latitude: location.latitude,
+                                longitude: location.longitude,
+                                timestamp: DateTime.now(), // Valor por defecto
+                                accuracy: 0.0, // Valor por defecto
+                                altitude: 0.0, // Valor por defecto
+                                altitudeAccuracy: 0.0, // Valor por defecto
+                                heading: 0.0, // Valor por defecto
+                                headingAccuracy: 0.0, // Valor por defecto
+                                speed: 0.0, // Valor por defecto
+                                speedAccuracy: 0.0, // Valor por defecto
+                              );
+                              setState(() {
+                                _ubicacionSeleccionada;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
 
+              // Muestra la ubicación seleccionada
+              if (_ubicacionSeleccionada != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                      "Ubicación: ${_ubicacionSeleccionada!.latitude}, ${_ubicacionSeleccionada!.longitude}"),
+                ),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -668,8 +709,7 @@ Future<void> createTopicDocument(String topicName, List<String> deviceTokens) as
           List<String> members = [];
 
           for (var member in miembros) {
-            if (member.containsKey('userId') &&
-                member['userId'] != null) {
+            if (member.containsKey('userId') && member['userId'] != null) {
               String token = member['userId'].toString();
               members.add(token);
             }

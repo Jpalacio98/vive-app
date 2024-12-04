@@ -144,9 +144,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   final distance =
                       calculateDistance(userLat, userLon, latitud, longitud);
-                  return nombre.contains(_searchQuery) && distance <= 250.0;
+                  return nombre.contains(_searchQuery);// && distance <= 250.0;
                 }).toList();
-
+                print("grupos filtrados: " + filteredGrupos.join(", "));
                 if (filteredGrupos.isEmpty) {
                   return const SizedBox(
                     height: 200,

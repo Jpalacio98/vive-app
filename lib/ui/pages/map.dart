@@ -31,11 +31,17 @@ class _MapaGruposState extends State<MapaGrupos> {
   Grupos? _selectedGrupo;
   String? isUbicacion;
   final ControllerUser controllerUser = Get.find();
+  double _filterDistance = 250.0;
+  double tempDistance = 250.0;
+
 
   @override
   void initState() {
     super.initState();
-    
+    _cameraPosition = CameraPosition(
+              target: LatLng(controller.latitud, controller.longitud),
+              zoom: 18.0,
+            );
     _initMapa();
   }
 
@@ -100,42 +106,42 @@ class _MapaGruposState extends State<MapaGrupos> {
     return degrees * pi / 180;
   }
 
-  Future<List<Grupos>> fetchGrupos() async {
-    List<Grupos> gruposList = [];
-    List<Grupos> gruposCercanos = [];
+  // Future<List<Grupos>> fetchGrupos() async {
+  //   List<Grupos> gruposList = [];
+  //   List<Grupos> gruposCercanos = [];
 
-    try {
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('grupos').get();
+  //   try {
+  //     QuerySnapshot querySnapshot =
+  //         await FirebaseFirestore.instance.collection('grupos').get();
 
-      gruposList = querySnapshot.docs.map((doc) {
-        return Grupos.fromJson({
-          ...doc.data() as Map<String, dynamic>,
-        });
-      }).toList();
+  //     gruposList = querySnapshot.docs.map((doc) {
+  //       return Grupos.fromJson({
+  //         ...doc.data() as Map<String, dynamic>,
+  //       });
+  //     }).toList();
 
-      // print("Grupos obtenidos: $gruposList");
+  //     print("Grupos obtenidos: $gruposList");
 
-      // Obtener la ubicación actual del usuario
-      double userLat =
-          controller.latitud; // Usa la latitud de la ubicación actual
-      double userLon =
-          controller.longitud; // Usa la longitud de la ubicación actual
+  //     // Obtener la ubicación actual del usuario
+  //     double userLat =
+  //         controller.latitud; // Usa la latitud de la ubicación actual
+  //     double userLon =
+  //         controller.longitud; // Usa la longitud de la ubicación actual
 
-      // Filtrar los grupos que estén a menos de 1 kilómetro
-      gruposCercanos = gruposList.where((grupo) {
-        double distance =
-            calculateDistance(userLat, userLon, grupo.latitud, grupo.longitud);
-        return distance <= 250.0; // Distancia menor o igual a 1 kilómetro
-      }).toList();
+  //     // Filtrar los grupos que estén a menos de 1 kilómetro
+  //     gruposCercanos = gruposList.where((grupo) {
+  //       double distance =
+  //           calculateDistance(userLat, userLon, grupo.latitud, grupo.longitud);
+  //       return distance <= 250.0; // Distancia menor o igual a 1 kilómetro
+  //     }).toList();
 
-      print("Grupos cercanos (menos de 1 km): $gruposCercanos");
-    } catch (e) {
-      print("Error al obtener grupos: $e");
-    }
+  //     print("Grupos cercanos (menos de 1 km): $gruposCercanos");
+  //   } catch (e) {
+  //     print("Error al obtener grupos: $e");
+  //   }
 
-    return gruposCercanos; // Devuelve solo los grupos cercanos
-  }
+  //   return gruposList; // Devuelve solo los grupos cercanos
+  // }
 
   Future<void> fetchGruposAndAddMarkers() async {
     mostrarAlertaCargando(context, "Cargando Grupos...");
@@ -390,26 +396,168 @@ class _MapaGruposState extends State<MapaGrupos> {
     );
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-              setState(() {
-                _isMapReady = true;
-              });
-            },
-            markers: _markers,
-            initialCameraPosition: CameraPosition(
-              target: LatLng(controller.latitud, controller.longitud),
-              zoom: 18.0,
-            ),
-          ),
-        ],
+      appBar: AppBar(
+        title: const Text("Mapa de Grupos"),
       ),
+      // Drawer para configurar la distancia
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: const Text(
+                'Configuración',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.filter_alt),
+              title: const Text('Distancia de Filtro'),
+              subtitle: Text('$_filterDistance km'),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  _showDistanceConfigDialog();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: GoogleMap(
+        initialCameraPosition: _cameraPosition,
+        markers: _markers,
+        onMapCreated: (controller) {
+          _mapController = controller;
+          setState(() {
+            _isMapReady = true;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showDistanceConfigDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return DistanceConfigDialog(
+        initialDistance: _filterDistance,
+        onDistanceChanged: (newDistance) {
+          setState(() {
+            _filterDistance = newDistance;
+          });
+        },
+      );
+    },
+  );
+}
+
+  // Actualiza la función de filtrar grupos con la nueva distancia
+  Future<List<Grupos>> fetchGrupos() async {
+    List<Grupos> gruposList = [];
+    List<Grupos> gruposCercanos = [];
+
+    try {
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('grupos').get();
+
+      gruposList = querySnapshot.docs.map((doc) {
+        return Grupos.fromJson({
+          ...doc.data() as Map<String, dynamic>,
+        });
+      }).toList();
+
+      print("Grupos obtenidos: $gruposList");
+
+      // Obtener la ubicación actual del usuario
+      double userLat =
+          controller.latitud; // Usa la latitud de la ubicación actual
+      double userLon =
+          controller.longitud; // Usa la longitud de la ubicación actual
+
+      // Filtrar los grupos que estén a menos de la distancia configurada
+      gruposCercanos = gruposList.where((grupo) {
+        double distance =
+            calculateDistance(userLat, userLon, grupo.latitud, grupo.longitud);
+        return distance <= _filterDistance; // Usa la distancia configurada
+      }).toList();
+
+      print("Grupos cercanos (menos de $_filterDistance km): $gruposCercanos");
+    } catch (e) {
+      print("Error al obtener grupos: $e");
+    }
+
+    return gruposCercanos; // Devuelve solo los grupos cercanos
+  }
+}
+
+
+
+class DistanceConfigDialog extends StatelessWidget {
+  final double initialDistance;
+  final ValueChanged<double> onDistanceChanged;
+
+  const DistanceConfigDialog({
+    Key? key,
+    required this.initialDistance,
+    required this.onDistanceChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    double tempDistance = initialDistance;
+
+    return AlertDialog(
+      title: const Text("Configurar Distancia"),
+      content: StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Slider(
+                value: tempDistance,
+                min: 100.0,
+                max: 100000.0,
+                divisions: 100,
+                label: "${tempDistance.toInt()} Km",
+                onChanged: (value) {
+                  setState(() {
+                    tempDistance = value;
+                  });
+                },
+              ),
+              Text(
+                "${tempDistance.toInt()} Km",
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text("Cancelar"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            onDistanceChanged(tempDistance);
+            Navigator.of(context).pop();
+          },
+          child: const Text("Aceptar"),
+        ),
+      ],
     );
   }
 }
