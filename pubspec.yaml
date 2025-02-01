@@ -58,6 +58,8 @@ dependencies:
   flutter_local_notifications: ^17.2.4
   flutter_dotenv: ^5.2.1
   geocoding: ^3.0.0
+  flutter_stripe: ^10.2.0
+
 
   
 dev_dependencies:

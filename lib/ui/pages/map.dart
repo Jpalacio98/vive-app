@@ -144,6 +144,7 @@ class _MapaGruposState extends State<MapaGrupos> {
   // }
 
   Future<void> fetchGruposAndAddMarkers() async {
+    _markers.clear(); 
     mostrarAlertaCargando(context, "Cargando Grupos...");
     List<Grupos> grupos = await fetchGrupos();
 
@@ -399,6 +400,7 @@ class _MapaGruposState extends State<MapaGrupos> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFFA1D0FF),
         title: const Text("Mapa de Grupos"),
       ),
       // Drawer para configurar la distancia
@@ -406,11 +408,11 @@ class _MapaGruposState extends State<MapaGrupos> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
+                color: Color(0xFFA1D0FF),
               ),
-              child: const Text(
+              child: Text(
                 'Configuración',
                 style: TextStyle(
                   color: Colors.white,
@@ -419,11 +421,11 @@ class _MapaGruposState extends State<MapaGrupos> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.filter_alt),
+              leading: const Icon(Icons.filter_alt,color: Color(0xFFA1D0FF)),
               title: const Text('Distancia de Filtro'),
               subtitle: Text('$_filterDistance km'),
               trailing: IconButton(
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.edit,color: Color(0xFFA1D0FF)),
                 onPressed: () {
                   _showDistanceConfigDialog();
                 },
@@ -454,6 +456,7 @@ class _MapaGruposState extends State<MapaGrupos> {
         onDistanceChanged: (newDistance) {
           setState(() {
             _filterDistance = newDistance;
+            fetchGruposAndAddMarkers();
           });
         },
       );
@@ -524,6 +527,7 @@ class DistanceConfigDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Slider(
+                activeColor: Color(0xFFA1D0FF),
                 value: tempDistance,
                 min: 100.0,
                 max: 100000.0,
@@ -548,14 +552,19 @@ class DistanceConfigDialog extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text("Cancelar"),
+          child: const Text("Cancelar",style: TextStyle(color: Color(0xFFA1D0FF)),),
         ),
         ElevatedButton(
           onPressed: () {
             onDistanceChanged(tempDistance);
             Navigator.of(context).pop();
           },
-          child: const Text("Aceptar"),
+          style:ElevatedButton.styleFrom(
+              //padding: const EdgeInsets.symmetric(vertical: 15),
+              backgroundColor: const Color(0xFFA1D0FF),
+            ),
+          
+          child: const Text("Aceptar",style: TextStyle(color: Colors.white),),
         ),
       ],
     );

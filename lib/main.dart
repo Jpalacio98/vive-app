@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,6 +15,7 @@ import 'package:vive_app/app/myApp.dart';
 import 'package:vive_app/config/firebase_options.dart';
 import 'package:vive_app/domain/services/bloc/notifications_bloc.dart';
 import 'package:vive_app/domain/services/local_notifications.dart';
+import 'package:vive_app/domain/services/stripe_service.dart';
 import 'package:vive_app/infrastructure/controllers/controllerUser.dart';
 import 'package:vive_app/infrastructure/controllers/map.dart';
 
@@ -41,6 +43,8 @@ void main() async {
   // await notify.createGroup("los chisco del barrio", members);
   print(
       "-------------------------------------------------------------------------");
+  Stripe.publishableKey =  dotenv.env['STRIPE_KEY']!;
+  //await Stripe.instance.applySettings();
   await Geolocator.requestPermission();
   await Hive.initFlutter();
   //limpiarBaseDeDatos();
@@ -52,7 +56,7 @@ void main() async {
 
   Get.put(ControllerUser());
   Get.put(MapController());
-
+  await PaymentService.initialize();
   print(dotenv.env['API_URL']!);
   runApp(MultiBlocProvider(
     providers: [
@@ -63,3 +67,5 @@ void main() async {
     child: const MyApp(),
   ));
 }
+
+

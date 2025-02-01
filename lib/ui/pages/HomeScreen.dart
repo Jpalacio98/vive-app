@@ -9,6 +9,7 @@ import 'package:vive_app/ui/components/searchBar.dart';
 import 'package:vive_app/ui/pages/chat.dart';
 import 'package:vive_app/ui/pages/crear-grupo.dart';
 import 'package:vive_app/ui/components/customChatGrupo.dart';
+import 'package:vive_app/ui/pages/donaciones.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -273,53 +274,80 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 50, right: 20, left: 20),
+        padding: const EdgeInsets.only(top: 50, right: 0, left: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(
-              "assets/logo_letras.png",
-              fit: BoxFit.cover,
-              width: 50,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Image.asset(
+                    "assets/logo_letras.png",
+                    fit: BoxFit.cover,
+                    width: 50,
+                  ),
+                ),
+                IconButton(
+                  onPressed: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DonationsPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.volunteer_activism,size: 20,),
+                  iconSize: 20,
+                  color: const Color(0xFFA1D0FF),
+                  )
+              ],
             ),
             // Campo de búsqueda
 
             const SizedBox(height: 25),
-            SearchBar1(
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value; // Actualiza la consulta de búsqueda
-                });
-              },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 0),
+              child: SearchBar1(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value; // Actualiza la consulta de búsqueda
+                  });
+                },
+              ),
             ),
             const SizedBox(height: 25),
 
             // Iterar sobre los grupos ordenados para construir widgets
             for (Grupos grupo in gruposNoNulos)
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Chat(
-                        grupo: grupo,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 0),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Chat(
+                          grupo: grupo,
+                        ),
                       ),
+                    );
+                  },
+                  onLongPress: () {
+                    eliminarGrupo(
+                        grupo.id); // Llama a la función para eliminar el grupo
+                  },
+                  child: CustomChatGrupo(
+                    mensaje: ultimosMensaje.firstWhere(
+                      (msg) => msg['grupoId'] == grupo.id,
+                      orElse: () => {
+                        'mensaje': 'No hay mensajes recientes',
+                        'fecha': null,
+                      },
                     ),
-                  );
-                },
-                onLongPress: () {
-                  eliminarGrupo(
-                      grupo.id); // Llama a la función para eliminar el grupo
-                },
-                child: CustomChatGrupo(
-                  mensaje: ultimosMensaje.firstWhere(
-                    (msg) => msg['grupoId'] == grupo.id,
-                    orElse: () => {
-                      'mensaje': 'No hay mensajes recientes',
-                      'fecha': null,
-                    },
+                    grupo: grupo,
                   ),
-                  grupo: grupo,
                 ),
               ),
 
@@ -371,3 +399,5 @@ class CustomFloatingButtonLocation extends FloatingActionButtonLocation {
     return Offset(fabX, fabY);
   }
 }
+
+
